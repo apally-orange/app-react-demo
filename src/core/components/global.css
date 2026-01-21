@@ -1,0 +1,33 @@
+.loading-spinner {
+	border: 4px solid rgba(0, 0, 0, 0.1);
+}
+
+.error-card {
+	display: flex;
+	gap: 1rem;
+	align-items: flex-start;
+	max-width: 400px;
+	padding: 1.5rem 1.2rem;
+	margin: 2rem auto;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+	color: #d32f2f;
+	background: #fff5f5;
+	border: 1px solid #ffb4b4;
+	border-radius: 0.75rem;
+	box-shadow: 0 4px 12px rgba(255, 0, 0, 0.09);
+}
+
+.error-card__content {
+	flex: 1;
+}
+
+.error-card__title {
+	margin: 0 0 0.3rem 0;
+	font-size: 1.2rem;
+	font-weight: bold;
+}
+
+.error-card__message {
+	margin: 0;
+	font-size: 1rem;
+}
