@@ -1,10 +1,13 @@
-import { useQuery } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { ErrorCard } from '../../core/components/ErrorCard.tsx'
 import { Loading } from '../../core/components/loading.tsx'
 
 export const Route = createFileRoute('/posts/')({
-	component: Posts,
+	component: RouteComponent,
+	errorComponent: () => <ErrorCard />,
+	loader: ({ context: { queryClient } }) =>
+		queryClient.ensureQueryData(postsQueryOptions),
 })
 
 type Post = {
@@ -12,28 +15,30 @@ type Post = {
 	title: string
 }
 
-function Posts() {
-	const { data, isLoading, error } = useQuery<{ posts: Post[] }>({
-		queryFn: () =>
-			fetch('https://dummyjson.com/posts').then((res) => res.json()),
-		queryKey: ['posts'],
-	})
+const postsQueryOptions = queryOptions({
+	queryFn: () => fetch('https://dummyjson.com/posts').then((res) => res.json()),
+	queryKey: ['posts'],
+})
+
+function RouteComponent() {
+	const { data, isLoading } = useSuspenseQuery(postsQueryOptions)
 
 	if (isLoading) {
 		return <Loading />
-	}
-	if (error) {
-		return <ErrorCard />
 	}
 
 	return (
 		<>
 			<h1>Liste des Posts</h1>
 			<ul className='list'>
-				{data?.posts.map((post) => (
-					<li className='list-card' key={post.id}>
+				{data?.posts.map((post: Post) => (
+					<Link
+						className='list-card'
+						key={post.id}
+						params={{ postId: post.id }}
+						to='/posts/$postId'>
 						<span className='list-title'>{post.title}</span>
-					</li>
+					</Link>
 				))}
 			</ul>
 		</>
