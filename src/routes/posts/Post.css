@@ -34,12 +34,9 @@
 }
 
 .reactions {
-	display: flex;
+	
 	gap: 2rem;
 	margin-bottom: 0.5rem;
 }
 
-.userId {
-	font-size: 0.95em;
-	color: #888;
-}
+

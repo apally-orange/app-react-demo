@@ -1,7 +1,7 @@
-import { infiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query'
+import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ErrorCard } from '../../core/components/ErrorCard.tsx'
-import { Loading } from '../../core/components/loading.tsx'
+import { Loading } from '../../core/components/Loading.tsx'
 
 export const Route = createFileRoute('/posts/')({
 	component: RouteComponent,
@@ -45,7 +45,7 @@ const postsQueryOptions = infiniteQueryOptions({
 		const skip =  pageSize * pageParam
 
 		return fetch(
-			`https://dummyjson.com/posts?limit=${pageSize}&skip=${skip}`,
+			`https://dummyjson.com/posts?&select=title&limit=${pageSize}&skip=${skip}`,
 		).then((res) => res.json())
 	},
 	queryKey: ['posts'],
@@ -59,7 +59,7 @@ function RouteComponent() {
 		hasNextPage,
 		isFetching,
 		isFetchingNextPage,
-	} = useInfiniteQuery(postsQueryOptions)
+	} = useSuspenseInfiniteQuery(postsQueryOptions)
 
 	if (isLoading) {
 		return <Loading />

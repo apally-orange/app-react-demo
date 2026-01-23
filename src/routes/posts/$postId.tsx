@@ -1,6 +1,7 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
-import { Loading } from '../../core/components/loading.tsx'
+import { Loading } from '../../core/components/Loading.tsx'
+import { UserCard } from '../../core/components/UserCard.tsx'
 import './Post.css'
 
 export const Route = createFileRoute('/posts/$postId')({
@@ -15,7 +16,6 @@ const postQueryOptions =  (postId: string) =>
 			fetch(`https://dummyjson.com/posts/${postId}`).then((res) => res.json()),
 		queryKey: ['posts', postId],
 	})
-
 
 function RouteComponent() {
 	const { postId } = Route.useParams()
@@ -38,13 +38,11 @@ function RouteComponent() {
                 ))}
             </div>
             <div className="reactions">
-                <span>👍 <strong>{reactions.likes}</strong></span>
-                <span>👎 <strong>{reactions.dislikes}</strong></span>
-                <span>👁️ <strong>{views}</strong></span>
+                <span>👍 <strong>{reactions.likes} </strong></span>
+                <span>👎 <strong>{reactions.dislikes} </strong></span>
+                <span>👁️ <strong>{views} </strong></span>
             </div>
-            <div className="userId">
-                Utilisateur : <strong>{userId}</strong>
-            </div>
+            <UserCard userId={userId} />
         </div>
     )
 }

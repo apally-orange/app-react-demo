@@ -12,6 +12,9 @@ function Index() {
 				<Link className='list-card' to='/posts/'>
 					Posts
 				</Link>
+								<Link className='list-card' to='/products/'>
+					Products
+				</Link>
 			</ul>
 		</div>
 	)

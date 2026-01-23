@@ -31,3 +31,8 @@
 	margin: 0;
 	font-size: 1rem;
 }
+
+.userCard {
+	font-size: 0.95em;
+	color: #888;
+}
