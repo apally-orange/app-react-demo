@@ -9,13 +9,13 @@ export const Route = createFileRoute('/posts/$postId')({
 		queryClient.ensureQueryData(postQueryOptions(postId)),
 })
 
-function postQueryOptions(postId: string) {
-	return queryOptions({
+const postQueryOptions =  (postId: string) =>
+	 queryOptions({
 		queryFn: () =>
 			fetch(`https://dummyjson.com/posts/${postId}`).then((res) => res.json()),
 		queryKey: ['posts', postId],
 	})
-}
+
 
 function RouteComponent() {
 	const { postId } = Route.useParams()
