@@ -1,16 +1,27 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import {
+    createFileRoute,
+    Link,
+    useNavigate,
+    useSearch
+} from '@tanstack/react-router'
 import { Loading } from '../../core/components/Loading.tsx'
 
 export const Route = createFileRoute('/products/')({
 	component: RouteComponent,
-	loader: ({ context: { queryClient } }) =>
-		queryClient.fetchQuery(productsQueryOptions),
+	loader: ({ context: { queryClient },  deps:  search  }) =>
+		{
+            const searchText = search?.search ?? ''
+            queryClient.fetchQuery(productsQueryOptions(searchText))
+        },
+	loaderDeps: ({ search }) => search,
 })
 
-const productsQueryOptions = queryOptions({
-	queryFn: () =>
-		fetch('https://dummyjson.com/products?&select=title,price,thumbnail').then((res) => res.json()),
+const productsQueryOptions = (search: string) => queryOptions({
+	queryFn: () =>{
+		return fetch(
+			`https://dummyjson.com/products/search?&select=title,price,thumbnail&q=${search}`,
+		).then((res) => res.json())},
 	queryKey: ['products'],
 })
 
@@ -22,7 +33,7 @@ type Product = {
 }
 
 function RouteComponent() {
-	const { data, isLoading } = useSuspenseQuery(productsQueryOptions)
+	const { data, isLoading } = useSuspenseQuery(productsQueryOptions(''))
 
 	if (isLoading) {
 		return <Loading />
@@ -33,12 +44,38 @@ function RouteComponent() {
 	return (
 		<div>
 			<h1>Produits</h1>
+			<Search />
 			<div className='list'>
 				{products.map((p) => (
 					<ProductCard key={p.id} product={p} />
 				))}
 			</div>
 		</div>
+	)
+}
+
+function Search() {
+	const navigate = useNavigate({ from: '/products/' })
+	const search = useSearch({ from: '/products/' }) as { search?: string }
+
+	const searchValue = search?.search ?? ''
+
+	const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+		navigate({
+			search: () => ({  search: e.target.value }),
+			to: '/products/',
+		})
+	}
+
+	return (
+		<input
+			className='search-bar'
+			onChange={handleSearch}
+			placeholder='Rechercher...'
+			style={{ marginBottom: '1rem', padding: '0.5rem', width: '100%' }}
+			type='search'
+			value={searchValue}
+		/>
 	)
 }
 
