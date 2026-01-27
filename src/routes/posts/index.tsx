@@ -1,4 +1,7 @@
-import { infiniteQueryOptions, useSuspenseInfiniteQuery } from '@tanstack/react-query'
+import {
+	infiniteQueryOptions,
+	useSuspenseInfiniteQuery,
+} from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { ErrorCard } from '../../core/components/ErrorCard.tsx'
 import { Loading } from '../../core/components/Loading.tsx'
@@ -16,10 +19,10 @@ type Post = {
 }
 
 type PostPage = {
-	 posts: Post[]
-	 total: number
-	 skip: number
-	 limit: number 
+	posts: Post[]
+	total: number
+	skip: number
+	limit: number
 }
 
 // biome-ignore lint/correctness/noUnusedVariables: for help understand data
@@ -42,7 +45,7 @@ const postsQueryOptions = infiniteQueryOptions({
 	},
 	initialPageParam: 0,
 	queryFn: ({ pageParam }) => {
-		const skip =  pageSize * pageParam
+		const skip = pageSize * pageParam
 
 		return fetch(
 			`https://dummyjson.com/posts?&select=title&limit=${pageSize}&skip=${skip}`,

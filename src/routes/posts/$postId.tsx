@@ -10,8 +10,8 @@ export const Route = createFileRoute('/posts/$postId')({
 		queryClient.ensureQueryData(postQueryOptions(postId)),
 })
 
-const postQueryOptions =  (postId: string) =>
-	 queryOptions({
+const postQueryOptions = (postId: string) =>
+	queryOptions({
 		queryFn: () =>
 			fetch(`https://dummyjson.com/posts/${postId}`).then((res) => res.json()),
 		queryKey: ['posts', postId],
@@ -28,21 +28,29 @@ function RouteComponent() {
 	const { title, body, tags, reactions, views, userId } = data
 
 	return (
-        <div className="postWidget">
-            <h2 className="title">{title}</h2>
-            <p className="body">{body}</p>
-            <div className="tags">
-                <strong>Tags: </strong>
-                {tags.map((tag: string) => (
-                    <span className="tag" key={tag}>{tag}</span>
-                ))}
-            </div>
-            <div className="reactions">
-                <span>👍 <strong>{reactions.likes} </strong></span>
-                <span>👎 <strong>{reactions.dislikes} </strong></span>
-                <span>👁️ <strong>{views} </strong></span>
-            </div>
-            <UserCard userId={userId} />
-        </div>
-    )
+		<div className='postWidget'>
+			<h2 className='title'>{title}</h2>
+			<p className='body'>{body}</p>
+			<div className='tags'>
+				<strong>Tags: </strong>
+				{tags.map((tag: string) => (
+					<span className='tag' key={tag}>
+						{tag}
+					</span>
+				))}
+			</div>
+			<div className='reactions'>
+				<span>
+					👍 <strong>{reactions.likes} </strong>
+				</span>
+				<span>
+					👎 <strong>{reactions.dislikes} </strong>
+				</span>
+				<span>
+					👁️ <strong>{views} </strong>
+				</span>
+			</div>
+			<UserCard userId={userId} />
+		</div>
+	)
 }

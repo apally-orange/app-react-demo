@@ -1,29 +1,30 @@
 import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
 import {
-    createFileRoute,
-    Link,
-    useNavigate,
-    useSearch
+	createFileRoute,
+	Link,
+	useNavigate,
+	useSearch,
 } from '@tanstack/react-router'
 import { Loading } from '../../core/components/Loading.tsx'
 
 export const Route = createFileRoute('/products/')({
 	component: RouteComponent,
-	loader: ({ context: { queryClient },  deps:  search  }) =>
-		{
-            const searchText = search?.search ?? ''
-            queryClient.fetchQuery(productsQueryOptions(searchText))
-        },
+	loader: ({ context: { queryClient }, deps: search }) => {
+		const searchText = search?.search ?? ''
+		queryClient.fetchQuery(productsQueryOptions(searchText))
+	},
 	loaderDeps: ({ search }) => search,
 })
 
-const productsQueryOptions = (search: string) => queryOptions({
-	queryFn: () =>{
-		return fetch(
-			`https://dummyjson.com/products/search?&select=title,price,thumbnail&q=${search}`,
-		).then((res) => res.json())},
-	queryKey: ['products'],
-})
+const productsQueryOptions = (search: string) =>
+	queryOptions({
+		queryFn: () => {
+			return fetch(
+				`https://dummyjson.com/products/search?&select=title,price,thumbnail&q=${search}`,
+			).then((res) => res.json())
+		},
+		queryKey: ['products'],
+	})
 
 type Product = {
 	id: number
@@ -62,7 +63,7 @@ function Search() {
 
 	const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
 		navigate({
-			search: () => ({  search: e.target.value }),
+			search: () => ({ search: e.target.value }),
 			to: '/products/',
 		})
 	}
