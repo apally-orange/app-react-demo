@@ -1,24 +1,27 @@
 /** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: <explanation> */
+/** biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: <explanation> */
 /** biome-ignore-all lint/style/noNestedTernary: <explanation> */
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
+import {
+	keepPreviousData,
+	useInfiniteQuery
+} from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import {
-    createColumnHelper,
-    flexRender,
-    getCoreRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    type Table,
-    useReactTable,
+	createColumnHelper,
+	flexRender,
+	getCoreRowModel,
+	getPaginationRowModel,
+	getSortedRowModel,
+	useReactTable,
 } from '@tanstack/react-table'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ErrorCard } from '../../core/components/ErrorCard.tsx'
 import { Loading } from '../../core/components/Loading.tsx'
 
 export const Route = createFileRoute('/users/')({
 	component: RouteComponent,
 	loader: ({ context: { queryClient } }) => {
-		queryClient.fetchQuery(usersQueryOptions)
+		queryClient.fetchInfiniteQuery(usersQueryOptions(initialPagination))
 	},
 })
 
@@ -29,16 +32,24 @@ type User = {
 	email: string
 }
 
-const usersQueryOptions = queryOptions({
-	queryFn: () => {
+const usersQueryOptions = (props: { pageIndex: number; pageSize: number }) => ({
+	getNextPageParam: (_lastGroup, groups) => groups.length,
+	initialPageParam: 0,
+	placeholderData: keepPreviousData,
+	queryFn: ({ pageParam = 0 }) => {
+		const skip = pageParam * props.pageSize
 		return fetch(
 			// biome-ignore lint/security/noSecrets: no secret
-			'https://dummyjson.com/users?select=firstName,lastName,email',
+			`https://dummyjson.com/users?limit=${props.pageSize}&skip=${skip}&select=firstName,lastName,email`,
 		)
 			.then((res) => res.json())
-			.then((data) => data.users)
+			.then((data) => ({
+				total: data.total,
+				users: data.users,
+			}))
 	},
 	queryKey: ['users'],
+	refetchOnWindowFocus: false,
 })
 
 const columnHelper = createColumnHelper<User>()
@@ -47,24 +58,39 @@ const columns = [
 	columnHelper.accessor('lastName', { header: () => 'Nom' }),
 	columnHelper.accessor('email', { header: () => 'Email' }),
 ]
+const initialPagination = { pageIndex: 0, pageSize: 10 }
 
 function RouteComponent() {
+	const [sorting, setSorting] = useState([])
+	const [pagination, setPagination] = useState(initialPagination)
+
 	const {
-		data: users = [],
+		data,
+		fetchNextPage,
+		hasNextPage,
+		isFetchingNextPage,
 		isLoading,
 		error,
-	} = useSuspenseQuery(usersQueryOptions)
+	} = useInfiniteQuery(usersQueryOptions(pagination))
 
-	const [sorting, setSorting] = useState([])
-	const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 })
+	const users = useMemo<User[]>(
+		() => data?.pages.flatMap((page) => page.users) || [],
+		[data],
+	)
+	const totalDBRowCount = data?.pages?.[0]?.total ?? 0
+	const totalFetched = users.length
+	const totalPages = useMemo(
+		() => Math.ceil(totalDBRowCount / pagination.pageSize),
+		[totalDBRowCount, pagination.pageSize],
+	)
 
 	const table = useReactTable({
 		columns,
-		data: users as User[],
+		data: users,
+		debugTable: true,
 		getCoreRowModel: getCoreRowModel(),
 		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
-		onPaginationChange: setPagination,
 		onSortingChange: setSorting,
 		state: { pagination, sorting },
 	})
@@ -74,6 +100,19 @@ function RouteComponent() {
 	}
 	if (error) {
 		return <ErrorCard />
+	}
+
+
+
+	const handleNext = async () => {
+		const nextPageIndex = pagination.pageIndex + 1
+		
+		if (totalFetched < totalDBRowCount && hasNextPage && !isFetchingNextPage) {
+			await fetchNextPage()
+		}
+		// Avance la page explicitement :
+		setPagination((prev) => ({ ...prev, pageIndex: nextPageIndex }))
+		table.nextPage()
 	}
 
 	return (
@@ -130,14 +169,7 @@ function RouteComponent() {
 				</tbody>
 			</table>
 
-			<FooterTable table={table} />
-		</div>
-	)
-}
-
-function FooterTable({ table }: { table: Table<User> }) {
-	return(
-            <div
+			<div
 				style={{
 					alignItems: 'center',
 					display: 'flex',
@@ -145,23 +177,33 @@ function FooterTable({ table }: { table: Table<User> }) {
 					marginTop: 12,
 				}}>
 				<button
-					disabled={!table.getCanPreviousPage()}
-					onClick={() => table.previousPage()}>
+					disabled={pagination.pageIndex === 0}
+					onClick={() =>
+						setPagination((prev) => ({
+							...prev,
+							pageIndex: prev.pageIndex - 1,
+						}))
+					}>
 					Précédent
 				</button>
 				<span>
-					Page {table.getState().pagination.pageIndex + 1} sur{' '}
-					{table.getPageCount()}
+					Page {pagination.pageIndex + 1} sur {totalPages}
 				</span>
 				<button
-					disabled={!table.getCanNextPage()}
-					onClick={() => table.nextPage()}>
-					Suivant
+					disabled={isFetchingNextPage || !hasNextPage || !table.getCanNextPage()}
+					onClick={handleNext}>
+					{isFetchingNextPage ? 'Chargement...' : 'Suivant'}
 				</button>
 				<span style={{ marginLeft: 'auto' }}>Afficher</span>
 				<select
-					onChange={(e) => table.setPageSize(Number(e.target.value))}
-					value={table.getState().pagination.pageSize}>
+					onChange={(e) =>
+						setPagination((prev) => ({
+							...prev,
+							pageIndex: 0,
+							pageSize: Number(e.target.value),
+						}))
+					}
+					value={pagination.pageSize}>
 					{[5, 10, 20].map((size) => (
 						<option key={size} value={size}>
 							{size}
@@ -169,5 +211,6 @@ function FooterTable({ table }: { table: Table<User> }) {
 					))}
 				</select>
 			</div>
-    )
+		</div>
+	)
 }
