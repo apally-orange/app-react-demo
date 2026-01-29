@@ -1,11 +1,8 @@
 /** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: <explanation> */
 /** biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: <explanation> */
 /** biome-ignore-all lint/style/noNestedTernary: <explanation> */
-import {
-	keepPreviousData,
-	useInfiniteQuery
-} from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import {
 	createColumnHelper,
 	flexRender,
@@ -102,11 +99,9 @@ function RouteComponent() {
 		return <ErrorCard />
 	}
 
-
-
 	const handleNext = async () => {
 		const nextPageIndex = pagination.pageIndex + 1
-		
+
 		if (totalFetched < totalDBRowCount && hasNextPage && !isFetchingNextPage) {
 			await fetchNextPage()
 		}
@@ -190,7 +185,9 @@ function RouteComponent() {
 					Page {pagination.pageIndex + 1} sur {totalPages}
 				</span>
 				<button
-					disabled={isFetchingNextPage || !hasNextPage || !table.getCanNextPage()}
+					disabled={
+						isFetchingNextPage || !hasNextPage || !table.getCanNextPage()
+					}
 					onClick={handleNext}>
 					{isFetchingNextPage ? 'Chargement...' : 'Suivant'}
 				</button>
@@ -210,6 +207,16 @@ function RouteComponent() {
 						</option>
 					))}
 				</select>
+			</div>
+			<div
+				style={{
+					display: 'flex',
+					justifyContent: 'flex-end',
+					marginTop: '1rem',
+				}}>
+				<Link to='/users/add'>
+					<button>Ajouter un utilisateur</button>
+				</Link>
 			</div>
 		</div>
 	)
