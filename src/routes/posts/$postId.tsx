@@ -10,7 +10,7 @@ export const Route = createFileRoute('/posts/$postId')({
 		queryClient.ensureQueryData(postQueryOptions(postId)),
 })
 
-const postQueryOptions = (postId: string) =>
+export const postQueryOptions = (postId: string) =>
 	queryOptions({
 		queryFn: () =>
 			fetch(`https://dummyjson.com/posts/${postId}`).then((res) => res.json()),
