@@ -2,13 +2,44 @@
 /** biome-ignore-all lint/style/noNestedTernary: <explanation> */
 /** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: <explanation> */
 import { type AnyFieldApi, useForm } from '@tanstack/react-form'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { z } from 'zod'
+
+const userSchema = z.object({
+	email: z.email('Invalid email address'),
+	firstName: z.string().min(3, 'First name must be at least 3 characters'),
+	lastName: z.string().min(1, 'Last name is required'),
+})
 
 export const Route = createFileRoute('/users/add')({
 	component: RouteComponent,
 })
 
 function RouteComponent() {
+	const queryClient = useQueryClient()
+
+	const addUserMutation = useMutation({
+		mutationFn: async (userData) => {
+			const response = await fetch('https://dummyjson.com/users/add', {
+				body: JSON.stringify(userData),
+				headers: { 'Content-Type': 'application/json' },
+				method: 'POST',
+			})
+			if (!response.ok) {
+				throw new Error('Network response was not ok')
+			}
+			return response.json()
+		},
+		onError: (error) => {
+			console.error('Error adding user:', error)
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['users'] })
+			form.reset()
+		},
+	})
+
 	const form = useForm({
 		defaultValues: {
 			email: '',
@@ -16,23 +47,17 @@ function RouteComponent() {
 			lastName: '',
 		},
 		onSubmit: async ({ value }) => {
-			const response = await fetch('https://dummyjson.com/users/add', {
-				body: JSON.stringify({
-					email: value.email,
-					firstName: value.firstName,
-					lastName: value.lastName,
-				}),
-				headers: { 'Content-Type': 'application/json' },
-				method: 'POST',
-			})
-			const data = await response.json()
-			console.log(data)
-			// Optionally: gestion de feedback, reset, ou navigation
+			try {
+				const validatedData = userSchema.parse(value)
+				addUserMutation.mutate(validatedData)
+			} catch (error) {
+				console.error('Validation error:', error)
+			}
 		},
 	})
-
 	return (
 		<form
+			name='user'
 			onSubmit={(e) => {
 				e.preventDefault()
 				e.stopPropagation()
@@ -42,12 +67,14 @@ function RouteComponent() {
 				<form.Field
 					name='firstName'
 					validators={{
-						onChange: ({ value }) =>
-							!value
-								? 'A first name is required'
-								: value.length < 3
-									? 'First name must be at least 3 characters'
-									: undefined,
+						onChange: ({ value }) => {
+							try {
+								userSchema.shape.firstName.parse(value)
+								return undefined
+							} catch (error) {
+								return error.message
+							}
+						},
 						onChangeAsync: async ({ value }) => {
 							await new Promise((resolve) => setTimeout(resolve, 1000))
 							return (
@@ -75,10 +102,49 @@ function RouteComponent() {
 				</form.Field>
 			</div>
 			<div>
-				<form.Field name='lastName'>
+				<form.Field
+					name='lastName'
+					validators={{
+						onChange: ({ value }) => {
+							try {
+								userSchema.shape.lastName.parse(value)
+								return undefined
+							} catch (error) {
+								return error.message
+							}
+						},
+					}}>
 					{(field) => (
 						<>
 							<label htmlFor={field.name}>Last Name:</label>
+							<input
+								id={field.name}
+								name={field.name}
+								onBlur={field.handleBlur}
+								onChange={(e) => field.handleChange(e.target.value)}
+								value={field.state.value}
+							/>
+							<FieldInfo field={field} />
+						</>
+					)}
+				</form.Field>
+			</div>
+			<div>
+				<form.Field
+					name='email'
+					validators={{
+						onChange: ({ value }) => {
+							try {
+								userSchema.shape.email.parse(value)
+								return undefined
+							} catch (error) {
+								return error.message
+							}
+						},
+					}}>
+					{(field) => (
+						<>
+							<label htmlFor={field.name}>Email:</label>
 							<input
 								id={field.name}
 								name={field.name}
