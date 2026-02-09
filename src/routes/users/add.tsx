@@ -1,22 +1,16 @@
-/** biome-ignore-all lint/style/noNegationElse: <explanation> */
-/** biome-ignore-all lint/style/noNestedTernary: <explanation> */
-/** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: <explanation> */
-import { type AnyFieldApi, useForm } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
-const userSchema = z.object({
-	email: z.email('Invalid email address'),
-	firstName: z.string().min(3, 'First name must be at least 3 characters'),
-	lastName: z.string().min(1, 'Last name is required'),
-})
+import { useAppForm } from '../../core/hooks/form.tsx'
+import { userFormOpts, userSchema } from '../../core/user-option.tsx'
+import './add.css'
 
 export const Route = createFileRoute('/users/add')({
 	component: RouteComponent,
 })
 
 function RouteComponent() {
+	const navigate = useNavigate()
 	const queryClient = useQueryClient()
 
 	const addUserMutation = useMutation({
@@ -37,134 +31,53 @@ function RouteComponent() {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['users'] })
 			form.reset()
+			navigate({ to: '/users' })
 		},
 	})
 
-	const form = useForm({
-		defaultValues: {
-			email: '',
-			firstName: '',
-			lastName: '',
-		},
-		onSubmit: async ({ value }) => {
-			try {
-				const validatedData = userSchema.parse(value)
-				addUserMutation.mutate(validatedData)
-			} catch (error) {
-				console.error('Validation error:', error)
+	const form = useAppForm({
+		...userFormOpts,
+		onSubmit: ({ value }) => {
+			const result = userSchema.safeParse(value)
+
+			if (result.success) {
+				addUserMutation.mutate(result.data)
+			} else {
+				console.error('Validation error:', result.error)
 			}
 		},
 	})
+
 	return (
 		<form
+			className='form'
 			name='user'
 			onSubmit={(e) => {
 				e.preventDefault()
 				e.stopPropagation()
 				form.handleSubmit()
 			}}>
-			<div>
-				<form.Field
-					name='firstName'
-					validators={{
-						onChange: ({ value }) => {
-							try {
-								userSchema.shape.firstName.parse(value)
-								return undefined
-							} catch (error) {
-								return error.message
-							}
-						},
-						onChangeAsync: async ({ value }) => {
-							await new Promise((resolve) => setTimeout(resolve, 1000))
-							return (
-								value.includes('error') && 'No "error" allowed in first name'
-							)
-						},
-						onChangeAsyncDebounceMs: 500,
-					}}>
-					{(field) => {
-						// Avoid hasty abstractions. Render props are great!
-						return (
-							<>
-								<label htmlFor={field.name}>First Name:</label>
-								<input
-									id={field.name}
-									name={field.name}
-									onBlur={field.handleBlur}
-									onChange={(e) => field.handleChange(e.target.value)}
-									value={field.state.value}
-								/>
-								<FieldInfo field={field} />
-							</>
-						)
-					}}
-				</form.Field>
-			</div>
-			<div>
-				<form.Field
-					name='lastName'
-					validators={{
-						onChange: ({ value }) => {
-							try {
-								userSchema.shape.lastName.parse(value)
-								return undefined
-							} catch (error) {
-								return error.message
-							}
-						},
-					}}>
-					{(field) => (
-						<>
-							<label htmlFor={field.name}>Last Name:</label>
-							<input
-								id={field.name}
-								name={field.name}
-								onBlur={field.handleBlur}
-								onChange={(e) => field.handleChange(e.target.value)}
-								value={field.state.value}
-							/>
-							<FieldInfo field={field} />
-						</>
-					)}
-				</form.Field>
-			</div>
-			<div>
-				<form.Field
-					name='email'
-					validators={{
-						onChange: ({ value }) => {
-							try {
-								userSchema.shape.email.parse(value)
-								return undefined
-							} catch (error) {
-								return error.message
-							}
-						},
-					}}>
-					{(field) => (
-						<>
-							<label htmlFor={field.name}>Email:</label>
-							<input
-								id={field.name}
-								name={field.name}
-								onBlur={field.handleBlur}
-								onChange={(e) => field.handleChange(e.target.value)}
-								value={field.state.value}
-							/>
-							<FieldInfo field={field} />
-						</>
-					)}
-				</form.Field>
-			</div>
+			<form.AppField name='firstName'>
+				{(field) => <field.TextField label='First Name' />}
+			</form.AppField>
+			<form.AppField name='lastName'>
+				{(field) => <field.TextField label='Last Name' />}
+			</form.AppField>
+			<form.AppField name='email'>
+				{(field) => <field.TextField label='Email' />}
+			</form.AppField>
 			<form.Subscribe
 				selector={(state) => [state.canSubmit, state.isSubmitting]}>
 				{([canSubmit, isSubmitting]) => (
-					<>
-						<button disabled={!canSubmit} type='submit'>
+					<div className='buttonContainer'>
+						<button
+							className='button submitButton'
+							disabled={!canSubmit}
+							type='submit'>
 							{isSubmitting ? '...' : 'Submit'}
 						</button>
 						<button
+							className='button resetButton'
 							onClick={(e) => {
 								// Avoid unexpected resets of form elements (especially <select> elements)
 								e.preventDefault()
@@ -173,20 +86,9 @@ function RouteComponent() {
 							type='reset'>
 							Reset
 						</button>
-					</>
+					</div>
 				)}
 			</form.Subscribe>
 		</form>
-	)
-}
-
-function FieldInfo({ field }: { field: AnyFieldApi }) {
-	return (
-		<>
-			{field.state.meta.isTouched && !field.state.meta.isValid ? (
-				<em>{field.state.meta.errors.join(',')}</em>
-			) : null}
-			{field.state.meta.isValidating ? 'Validating...' : null}
-		</>
 	)
 }
