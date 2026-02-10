@@ -1,6 +1,4 @@
-/** biome-ignore-all lint/complexity/noExcessiveLinesPerFunction: <explanation> */
-/** biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: <explanation> */
-/** biome-ignore-all lint/style/noNestedTernary: <explanation> */
+
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import {

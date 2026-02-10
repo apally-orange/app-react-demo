@@ -18,6 +18,9 @@ function Index() {
 				<Link className='list-card' to='/users/'>
 					Users
 				</Link>
+				<Link className='list-card' to='/todos/'>
+					Personal Todos
+				</Link>
 			</ul>
 		</div>
 	)

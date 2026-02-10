@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsersIndexRouteImport } from './routes/users/index'
 import { Route as ProductsIndexRouteImport } from './routes/products/index'
@@ -16,7 +18,17 @@ import { Route as PostsIndexRouteImport } from './routes/posts/index'
 import { Route as UsersAddRouteImport } from './routes/users/add'
 import { Route as ProductsProductIdRouteImport } from './routes/products/$productId'
 import { Route as PostsPostIdRouteImport } from './routes/posts/$postId'
+import { Route as AuthenticatedTodosIndexRouteImport } from './routes/_authenticated/todos/index'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -52,67 +64,88 @@ const PostsPostIdRoute = PostsPostIdRouteImport.update({
   path: '/posts/$postId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedTodosIndexRoute = AuthenticatedTodosIndexRouteImport.update({
+  id: '/todos/',
+  path: '/todos/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/users/add': typeof UsersAddRoute
   '/posts/': typeof PostsIndexRoute
   '/products/': typeof ProductsIndexRoute
   '/users/': typeof UsersIndexRoute
+  '/todos/': typeof AuthenticatedTodosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/users/add': typeof UsersAddRoute
   '/posts': typeof PostsIndexRoute
   '/products': typeof ProductsIndexRoute
   '/users': typeof UsersIndexRoute
+  '/todos': typeof AuthenticatedTodosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/login': typeof LoginRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/products/$productId': typeof ProductsProductIdRoute
   '/users/add': typeof UsersAddRoute
   '/posts/': typeof PostsIndexRoute
   '/products/': typeof ProductsIndexRoute
   '/users/': typeof UsersIndexRoute
+  '/_authenticated/todos/': typeof AuthenticatedTodosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/posts/$postId'
     | '/products/$productId'
     | '/users/add'
     | '/posts/'
     | '/products/'
     | '/users/'
+    | '/todos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/posts/$postId'
     | '/products/$productId'
     | '/users/add'
     | '/posts'
     | '/products'
     | '/users'
+    | '/todos'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
+    | '/login'
     | '/posts/$postId'
     | '/products/$productId'
     | '/users/add'
     | '/posts/'
     | '/products/'
     | '/users/'
+    | '/_authenticated/todos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  LoginRoute: typeof LoginRoute
   PostsPostIdRoute: typeof PostsPostIdRoute
   ProductsProductIdRoute: typeof ProductsProductIdRoute
   UsersAddRoute: typeof UsersAddRoute
@@ -123,6 +156,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -172,11 +219,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsPostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/todos/': {
+      id: '/_authenticated/todos/'
+      path: '/todos'
+      fullPath: '/todos/'
+      preLoaderRoute: typeof AuthenticatedTodosIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
+interface AuthenticatedRouteChildren {
+  AuthenticatedTodosIndexRoute: typeof AuthenticatedTodosIndexRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedTodosIndexRoute: AuthenticatedTodosIndexRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  LoginRoute: LoginRoute,
   PostsPostIdRoute: PostsPostIdRoute,
   ProductsProductIdRoute: ProductsProductIdRoute,
   UsersAddRoute: UsersAddRoute,
