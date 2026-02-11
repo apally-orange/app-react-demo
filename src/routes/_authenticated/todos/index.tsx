@@ -1,5 +1,11 @@
-import { queryOptions, useSuspenseQuery } from '@tanstack/react-query'
+import {
+    queryOptions,
+    useMutation,
+    useQueryClient,
+    useSuspenseQuery,
+} from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { useState } from 'react'
 
 export const Route = createFileRoute('/_authenticated/todos/')({
 	component: RouteComponent,
@@ -47,19 +53,65 @@ function Todoslist() {
 	const { auth } = Route.useRouteContext()
 	const { data } = useSuspenseQuery(todosQueryOptions(auth.user.id))
 
-	const todos = data.todos as Todo[]
+    const [localTodos, setLocalTodos] = useState(data.todos as Todo[])
+
+	const queryClient = useQueryClient()
+
+	const mutation = useMutation({
+		mutationFn: async (todo: Todo) => {
+			const token = localStorage.getItem('auth-token')
+			const res = await fetch(`https://dummyjson.com/todos/${todo.id}`, {
+				body: JSON.stringify({ completed: !todo.completed }),
+				headers: {
+					Authorization: `Bearer ${token}`,
+					'Content-Type': 'application/json',
+				},
+				method: 'PUT',
+			})
+
+            //update local to simulate the respons update
+            setLocalTodos(todos =>
+            todos.map(t =>
+                t.id === todo.id ? { ...t, completed: !t.completed } : t
+            )
+        )
+
+			return res.json()
+		},
+		onSuccess: () => {
+			// Invalide et refetch la liste des todos
+			queryClient.invalidateQueries({ queryKey: ['todos'] })
+		},
+	})
+
+	
 
 	return (
 		<ul>
-			{todos.map((todo) => (
+			{localTodos.map((todo) => (
 				<li
 					key={todo.id}
 					style={{ alignItems: 'center', display: 'flex', gap: 8 }}>
-					<span>{todo.completed ? '✅' : '⬜'}</span>
+					<button
+						aria-label={
+							todo.completed
+								? 'Marquer comme non terminé'
+								: 'Marquer comme terminé'
+						}
+						disabled={mutation.isPending}
+						onClick={() => mutation.mutate(todo)}
+						style={{
+							background: 'none',
+							border: 'none',
+							cursor: 'pointer',
+							fontSize: 20,
+						}}>
+						{todo.completed ? '✅' : '⬜'}
+					</button>
 					<span>{todo.todo}</span>
 				</li>
 			))}
 		</ul>
 	)
 }
-	
+						
